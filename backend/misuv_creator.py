@@ -4,7 +4,7 @@ from config import REVIEW_TYPE_TO_QUESTIONS
 from hive import HiveAPI
 
 
-class QuestionCreator():
+class MisuvCreator():
     def __init__(self, hive_api: HiveAPI, daily_submission: DailySubmission):
         self.hive_api = hive_api
         self.daily_submission = daily_submission

@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import config
 from api_types import DailySubmission
 from hive import HiveAPI
-from questions_creator import QuestionCreator
+from misuv_creator import MisuvCreator
 
 app = FastAPI()
 hive_api = HiveAPI(config.HIVE_USERNAME, config.HIVE_PASSWORD, config.HIVE_URL)
@@ -43,8 +43,8 @@ async def submit_daily(daily_data: DailySubmission):
     print(f"Daily Question: {daily_data.dailyQuestion}")
 
     # You can process the data further or save it to a database
-    question_creator = QuestionCreator(hive_api, daily_data)
-    url = question_creator.create()
+    misuv_creator = MisuvCreator(hive_api, daily_data)
+    url = misuv_creator.create()
     exercise_url = f"{config.HIVE_URL}/{url}"
     # Return a response
     return {"message": f"קישור למישוב {exercise_url}"}
