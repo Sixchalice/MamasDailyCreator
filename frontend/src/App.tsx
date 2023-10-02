@@ -12,9 +12,9 @@ import {
 import './style.css';
 
 
-const classReviewTypes: string[] = ['הרצאה', 'ע"ע', 'ל"ע', 'א"ג'];
 const api: string = 'http://127.0.0.1:80/api/submit';
 const coursesApi: string = 'http://127.0.0.1:80/api/courses';
+const reviewTypesApi: string = 'http://127.0.0.1:80/api/reviewTypes';
 
 interface ClassReview {
   type: string;
@@ -24,6 +24,7 @@ interface ClassReview {
 function App() {
   const [course, setCourse] = useState<string>('');
   const [courses, setCourses] = useState<string[]>([]);
+  const [classReviewTypes, setClassReviewTypes] = useState<string[]>([]);
   const [classReviews, setClassReviews] = useState<ClassReview[]>([]);
   const [newReview, setNewReview] = useState<ClassReview>({
     type: '',
@@ -54,8 +55,23 @@ function App() {
         setCourses(data)
       })
       .catch(error => {
-        console.error('API Error:', error);
+        setSubmitResponse(error.toString())
       });
+
+      fetch(reviewTypesApi, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        }
+      })
+        .then(response => response.json())
+        .then(data => {
+          console.log(data)
+          setClassReviewTypes(data)
+        })
+        .catch(error => {
+          setSubmitResponse(error.toString())
+        });
   },[])
   const handleCourseChange = (e: React.ChangeEvent<{ value: unknown }>) => {
     setCourse(e.target.value as string);
@@ -134,6 +150,7 @@ function App() {
   };
 
   const handleSubmit = () => {
+    setSubmitResponse("...Waiting for response")
     const dataToSend = {
       course,
       classReviews,
