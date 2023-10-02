@@ -44,6 +44,7 @@ async def submit_daily(daily_data: DailySubmission):
 
     # You can process the data further or save it to a database
     question_creator = QuestionCreator(hive_api, daily_data)
-    question_creator.create()
+    url = question_creator.create()
+    exercise_url = f"{config.HIVE_URL}/{url}"
     # Return a response
-    return {"message": "Data received successfully"}
+    return {"message": f"קישור למישוב {exercise_url}"}

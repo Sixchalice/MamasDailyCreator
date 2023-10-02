@@ -10,9 +10,9 @@ class QuestionCreator():
         self.daily_submission = daily_submission
 
     def create(self):
+        program_id = self.hive_api.get_program_id_by_name(self.daily_submission.course)
         subject_id = self.hive_api.get_subject_id_in_program(config.MISUV_SUBJECT_SYMBOL, self.daily_submission.course)
         if not subject_id:
-            program_id = self.hive_api.get_program_id_by_name(self.daily_submission.course)
             subject_id = self.hive_api.create_subject(program_id, config.MISUV_SUBJECT_SYMBOL,
                                                       config.MISUV_SUBJECT_NAME, "#ffeb3b").json()["id"]
         module_id = self.hive_api.get_module_id(subject_id, config.MISUV_MODULE_NAME)
@@ -35,6 +35,9 @@ class QuestionCreator():
         if not queue_id:
             queue_id = self.hive_api.create_new_queue(config.MISUV_MODULE_NAME, module_id).json()["id"]
         self.hive_api.add_exercise_to_queue(exercise_id, queue_id)
+
+        # Returning the url for the exercise
+        return f"course/{program_id}/{subject_id}/{module_id}/{exercise_id}"
 
     def create_questions(self, exercise_id):
         self.delete_existing_fields(exercise_id)
