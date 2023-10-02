@@ -92,8 +92,9 @@ class HiveAPI:
             "preview": preview,
             "tags": tags
         }
-        return self.session.post(self.hive_host + "/api/core/course/exercises/", json=body,
+        response = self.session.post(self.hive_host + "/api/core/course/exercises/", json=body,
                                  headers=self.headers)
+        return response
 
     def create_field(self, exercise_id, name, metadata=None, has_value=True,
                      required=False, segel_only=True, type="text", for_response_type=None,
@@ -227,19 +228,18 @@ class HiveAPI:
         # TODO: support more queue types (4 is module queue)
         body = {
             "name": queue_name,
-            # TODO fix
-            "for_object": self.get_module_owns(subject, module),
+            "for_object": self.get_module_owns(module_id),
             "queue_type": 4,
             "for_classes": [self.get_class_id(a_class) for a_class in classes_names]
         }
-        return self.session.post(f"{self.hive_host}/api/core/queues/", json=body, headers=self.headers)
+        response = self.session.post(f"{self.hive_host}/api/core/queues/", json=body, headers=self.headers)
+        return response
 
     def update_queue(self, queue_name, module_id, classes_names=[]):
         queue_id = self.get_queue_id(queue_name, module_id)
         body = {
             "name": queue_name,
-            # TODO: fix
-            "for_object": self.get_module_owns(subject, module),
+            "for_object": self.get_module_owns(module_id),
             "queue_type": 4,
             "for_classes": [self.get_class_id(a_class) for a_class in classes_names]
         }
@@ -334,13 +334,12 @@ class HiveAPI:
             print(f"module {module_name} does not exist")
             return None
 
-    def get_module_owns(self, subject_name, module_name):
+    def get_module_owns(self, module_id):
         response = self.session.get(self.hive_host + "/api/core/course/modules", headers=self.headers)
         try:
-            return list(filter(lambda module: (module["name"] == module_name) and (
-                    module["parent_subject"] == self.get_subject_id(subject_name)), response.json()))[0]["owns"]
+            return list(filter(lambda module: (module["id"] == module_id), response.json()))[0]["owns"]
         except IndexError:
-            print(f"module {module_name} does not exist")
+            print(f"module {module_id} does not exist")
             return None
 
     def get_exercise_id(self, module_id, exercise_name, order=None):
@@ -373,8 +372,15 @@ class HiveAPI:
             print(f"user {username} does not exist")
             return None
 
-    def create_subject(self, subject):
-        raise NotImplemented
+    def create_subject(self, program_id, symbol, name, color):
+        body = {
+            "name": name,
+            "parent_program": program_id,
+            "symbol": symbol,
+            "color": color
+        }
+        response = self.session.post(self.hive_host + "/api/core/course/subjects/", json=body, headers=self.headers)
+        return response
 
     def retrieve_exercise_answers_by_id(self, exercise_id):
         response = self.session.get(self.hive_host + "/api/core/assignments/?exercise_id={}".format(exercise_id),

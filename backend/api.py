@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+import config
 from api_types import DailySubmission
 from hive import HiveAPI
 from questions_creator import QuestionCreator
 
 app = FastAPI()
-hive_api = HiveAPI("admin", "AdMataiHabra", "https://10.0.10.23")
+hive_api = HiveAPI(config.HIVE_USERNAME, config.HIVE_PASSWORD, config.HIVE_URL)
 
 origins = [
     "*",
@@ -24,6 +25,11 @@ app.add_middleware(
 @app.get("/api/courses")
 async def get_courses():
     return hive_api.get_programs_names()
+
+
+@app.get("/api/reviewTypes")
+async def get_review_types():
+    return list(config.REVIEW_TYPE_TO_QUESTIONS.keys())
 
 
 @app.post("/api/submit")

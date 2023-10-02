@@ -11,14 +11,7 @@ LECTURE_QUESTIONS = ["איך היה המרצה?",
                      "כמה מובן היה?"]
 
 PHYSICAL_TRAINING_QUESTIONS = ["איך הרגשת?",
-                               "ציון ככלי",
+                               "ציון כללי",
                                "כמה מועיל זה היה"]
-
-REVIEW_TYPE_TO_QUESTIONS= {
-    'ע"ע': EXERCISE_QUESTIONS,
-    'הרצאה': LECTURE_QUESTIONS,
-    'ל"ע': PERSONAL_LEARN_QUESTIONS,
-    'א"ג': PHYSICAL_TRAINING_QUESTIONS,
-}
 
 
