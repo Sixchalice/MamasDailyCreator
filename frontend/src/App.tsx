@@ -150,7 +150,7 @@ function App() {
   };
 
   const handleSubmit = () => {
-    setSubmitResponse("...Waiting for response")
+    setSubmitResponse("מחכה לתשובה...")
     const dataToSend = {
       course,
       classReviews,
