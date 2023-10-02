@@ -39,6 +39,7 @@ function App() {
     title: '',
   });
   const [selectedDate, setSelectedDate] = useState<string>('');
+  const [submitResponse, setSubmitResponse] = useState<string>('');
 
   useEffect(()=>{
     fetch(coursesApi, {
@@ -156,9 +157,11 @@ function App() {
       .then(response => response.json())
       .then(data => {
         console.log('API Response:', data);
+        setSubmitResponse(data["message"])
       })
       .catch(error => {
         console.error('API Error:', error);
+        setSubmitResponse(error.toString())
       });
   };
 
@@ -334,6 +337,9 @@ function App() {
         >
           שלח
         </Button>
+        {submitResponse ? <h3 className="form-container">
+          {submitResponse}
+        </h3>: <div/>}
       </div>
     </div>
   );
