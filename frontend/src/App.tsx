@@ -12,9 +12,9 @@ import {
 import './style.css';
 
 
-const api: string = 'http://127.0.0.1:80/api/submit';
-const coursesApi: string = 'http://127.0.0.1:80/api/courses';
-const reviewTypesApi: string = 'http://127.0.0.1:80/api/reviewTypes';
+const api: string = 'http://127.0.0.1:9000/api/submit';
+const coursesApi: string = 'http://127.0.0.1:9000/api/courses';
+const reviewTypesApi: string = 'http://127.0.0.1:9000/api/reviewTypes';
 
 interface ClassReview {
   type: string;

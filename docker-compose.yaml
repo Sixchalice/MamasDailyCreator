@@ -1,0 +1,16 @@
+version: "3.9"
+
+services:
+  frontend:
+    build:
+      context: frontend
+    image: dailyreview/frontend
+    ports:
+      - "80:80"
+
+  backend:
+    build:
+      context: backend
+    image: dailyreview/backend
+    ports:
+      - "9000:9000"
