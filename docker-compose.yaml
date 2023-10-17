@@ -6,11 +6,26 @@ services:
       context: frontend
     image: dailyreview/frontend
     ports:
-      - "80:80"
+      - "83:8080"
+    networks:
+      - inside
 
   backend:
     build:
       context: backend
+    container_name: "backend"
     image: dailyreview/backend
     ports:
       - "9000:9000"
+    networks:
+      - inside
+      - outside
+
+networks:
+  outside:
+    driver: bridge
+  inside:
+
+
+
+

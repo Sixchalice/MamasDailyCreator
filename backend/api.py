@@ -7,11 +7,10 @@ from hive import HiveAPI
 from misuv_creator import MisuvCreator
 
 app = FastAPI()
-hive_api = HiveAPI(config.HIVE_USERNAME, config.HIVE_PASSWORD, config.HIVE_URL)
+hives_api = {hive_name: HiveAPI(hive_config.get("username"), hive_config.get("password"), hive_config.get("url")) for
+             hive_name, hive_config in config.HIVES_CONFIG.items()}
 
-origins = [
-    "*",
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,7 +23,12 @@ app.add_middleware(
 
 @app.get("/api/courses")
 async def get_courses():
-    return hive_api.get_programs_names()
+    courses = []
+    for hive_name, hive_api in hives_api.items():
+        programs = hive_api.get_programs_names()
+        for program in programs:
+            courses.append(f"{hive_name}:{program}")
+    return courses
 
 
 @app.get("/api/reviewTypes")
@@ -43,8 +47,11 @@ async def submit_daily(daily_data: DailySubmission):
     print(f"Daily Question: {daily_data.dailyQuestion}")
 
     # You can process the data further or save it to a database
+    hive_name, course = daily_data.course.split(":")
+    daily_data.course = course
+    hive_api = hives_api.get(hive_name)
     misuv_creator = MisuvCreator(hive_api, daily_data)
     url = misuv_creator.create()
-    exercise_url = f"{config.HIVE_URL}/{url}"
+    exercise_url = f"{hive_api.hive_host}/{url}"
     # Return a response
     return {"message": f"קישור למישוב {exercise_url}"}

@@ -12,9 +12,9 @@ import {
 import './style.css';
 
 
-const api: string = 'http://127.0.0.1:9000/api/submit';
-const coursesApi: string = 'http://127.0.0.1:9000/api/courses';
-const reviewTypesApi: string = 'http://127.0.0.1:9000/api/reviewTypes';
+const api: string = '/api/submit';
+const coursesApi: string = '/api/courses';
+const reviewTypesApi: string = '/api/reviewTypes';
 
 interface ClassReview {
   type: string;
@@ -157,10 +157,12 @@ function App() {
     };
 
     if (includeDailyQuestion && dailyQuestion) {
+      //@ts-ignore
       dataToSend['dailyQuestion'] = dailyQuestion;
     }
 
     if (selectedDate) {
+      //@ts-ignore
       dataToSend['selectedDate'] = selectedDate;
     }
 
