@@ -4,19 +4,20 @@ services:
   frontend:
     build:
       context: frontend
+    container_name: "daily_review"
     image: dailyreview/frontend
-    ports:
-      - "83:8080"
+    expose:
+      - "80"
     networks:
-      - inside
+      - inside 
 
   backend:
     build:
       context: backend
     container_name: "backend"
     image: dailyreview/backend
-    ports:
-      - "9000:9000"
+    expose:
+      - "9000"
     networks:
       - inside
       - outside
@@ -25,6 +26,7 @@ networks:
   outside:
     driver: bridge
   inside:
+    name: "daily_review"
 
 
 
