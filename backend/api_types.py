@@ -12,6 +12,7 @@ class DailySubmission(BaseModel):
     course: str
     selectedDate: date
     classReviews: List[ClassReview]
+    weekNumber: int
     dailyQuestion: Optional[str] = None
 
 

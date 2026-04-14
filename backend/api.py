@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
 import config
@@ -36,15 +36,28 @@ async def get_review_types():
     return list(config.REVIEW_TYPE_TO_QUESTIONS.keys())
 
 
+@app.get("/api/weeks")
+async def get_week_range():
+    """Week numbers available for מישוב (1 .. WEEK_MODULE_COUNT)."""
+    return {"minWeek": 1, "maxWeek": config.WEEK_MODULE_COUNT}
+
+
 @app.post("/api/submit")
 async def submit_daily(daily_data: DailySubmission):
     # Do something with the received data
     # Example: Print the data
     print("Received Data:")
     print(f"Course: {daily_data.course}")
+    print(f"Week: {daily_data.weekNumber}")
     print(f"Date: {daily_data.selectedDate}")
     print(f"Class Reviews: {daily_data.classReviews}")
     print(f"Daily Question: {daily_data.dailyQuestion}")
+
+    if daily_data.weekNumber < 1 or daily_data.weekNumber > config.WEEK_MODULE_COUNT:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Week must be between 1 and {config.WEEK_MODULE_COUNT}",
+        )
 
     # You can process the data further or save it to a database
     hive_name, course = daily_data.course.split(":")

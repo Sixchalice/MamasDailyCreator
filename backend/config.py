@@ -18,4 +18,7 @@ HIVES_CONFIG = {
 
 MISUV_SUBJECT_SYMBOL = "M"
 MISUV_SUBJECT_NAME = "מישוב"
-MISUV_MODULE_NAME = "מישוב יומי"
+# Week-based modules: one module per week. Hive `order` = week index (1..WEEK_MODULE_COUNT).
+WEEK_MODULE_COUNT = 60
+# Display name for each module in Hive (week number is {0}).
+MISUV_WEEK_MODULE_LABEL_TEMPLATE = "שבוע {}"

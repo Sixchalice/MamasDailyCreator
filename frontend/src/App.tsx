@@ -11,10 +11,28 @@ import {
 } from '@material-ui/core';
 import './style.css';
 
+/**
+ * API base for FastAPI.
+ * - Set `VITE_API_BASE_URL` in `frontend/.env` (e.g. `http://127.0.0.1:9000`) to override.
+ * - In dev, defaults to `http://127.0.0.1:9000` so `/api/*` hits the backend even when Vite’s proxy does not.
+ * - In production builds, omit the env var to use same-origin `/api` (e.g. nginx → backend).
+ */
+function getApiBase(): string {
+  const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
+  if (fromEnv !== undefined && fromEnv !== '') {
+    return fromEnv.replace(/\/$/, '');
+  }
+  if (import.meta.env.DEV) {
+    return 'http://127.0.0.1:9000';
+  }
+  return '';
+}
 
-const api: string = '/api/submit';
-const coursesApi: string = '/api/courses';
-const reviewTypesApi: string = '/api/reviewTypes';
+function apiUrl(path: string): string {
+  const base = getApiBase();
+  const p = path.startsWith('/') ? path : `/${path}`;
+  return base ? `${base}${p}` : p;
+}
 
 interface ClassReview {
   type: string;
@@ -24,6 +42,8 @@ interface ClassReview {
 function App() {
   const [course, setCourse] = useState<string>('');
   const [courses, setCourses] = useState<string[]>([]);
+  const [weekNumber, setWeekNumber] = useState<number>(1);
+  const [maxWeek, setMaxWeek] = useState<number>(60);
   const [classReviewTypes, setClassReviewTypes] = useState<string[]>([]);
   const [classReviews, setClassReviews] = useState<ClassReview[]>([]);
   const [newReview, setNewReview] = useState<ClassReview>({
@@ -33,7 +53,6 @@ function App() {
   const [dailyQuestion, setDailyQuestion] = useState<string>('');
   const [includeDailyQuestion, setIncludeDailyQuestion] =
     useState<boolean>(false);
-  const [apiEndpoint, setApiEndpoint] = useState<string>(api);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [editingReview, setEditingReview] = useState<ClassReview>({
     type: '',
@@ -42,39 +61,51 @@ function App() {
   const [selectedDate, setSelectedDate] = useState<string>('');
   const [submitResponse, setSubmitResponse] = useState<string>('');
 
-  useEffect(()=>{
-    fetch(coursesApi, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      }
-    })
-      .then(response => response.json())
-      .then(data => {
-        console.log(data)
-        setCourses(data)
-      })
-      .catch(error => {
-        setSubmitResponse(error.toString())
+  useEffect(() => {
+    const fetchJson = (path: string) =>
+      fetch(apiUrl(path), {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      }).then((response) => {
+        if (!response.ok) {
+          throw new Error(`${path} → HTTP ${response.status}`);
+        }
+        return response.json();
       });
 
-      fetch(reviewTypesApi, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        }
+    fetchJson('/api/courses')
+      .then((data) => {
+        setCourses(data);
       })
-        .then(response => response.json())
-        .then(data => {
-          console.log(data)
-          setClassReviewTypes(data)
-        })
-        .catch(error => {
-          setSubmitResponse(error.toString())
-        });
-  },[])
+      .catch((error) => {
+        setSubmitResponse(error.toString());
+      });
+
+    fetchJson('/api/reviewTypes')
+      .then((data) => {
+        setClassReviewTypes(data);
+      })
+      .catch((error) => {
+        setSubmitResponse(error.toString());
+      });
+
+    fetchJson('/api/weeks')
+      .then((data: { minWeek: number; maxWeek: number }) => {
+        setMaxWeek(data.maxWeek);
+        setWeekNumber((w) =>
+          w >= data.minWeek && w <= data.maxWeek ? w : data.minWeek
+        );
+      })
+      .catch((error) => {
+        setSubmitResponse(error.toString());
+      });
+  }, []);
   const handleCourseChange = (e: React.ChangeEvent<{ value: unknown }>) => {
     setCourse(e.target.value as string);
+  };
+
+  const handleWeekChange = (e: React.ChangeEvent<{ value: unknown }>) => {
+    setWeekNumber(Number(e.target.value));
   };
 
   const handleReviewTypeChange = (e: React.ChangeEvent<{ value: unknown }>) => {
@@ -154,6 +185,7 @@ function App() {
     const dataToSend = {
       course,
       classReviews,
+      weekNumber,
     };
 
     if (includeDailyQuestion && dailyQuestion) {
@@ -166,7 +198,7 @@ function App() {
       dataToSend['selectedDate'] = selectedDate;
     }
 
-    fetch(apiEndpoint, {
+    fetch(apiUrl('/api/submit'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -207,6 +239,22 @@ function App() {
             {courses.map(option => (
               <MenuItem key={option} value={option}>
                 {option}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+        <FormControl className='course-select'>
+          <InputLabel htmlFor='misuv-week'>שבוע</InputLabel>
+          <Select
+            labelId='misuv-week'
+            id='misuv-week'
+            value={weekNumber}
+            onChange={handleWeekChange}
+            fullWidth
+          >
+            {Array.from({ length: maxWeek }, (_, i) => i + 1).map((w) => (
+              <MenuItem key={w} value={w}>
+                שבוע {w}
               </MenuItem>
             ))}
           </Select>
@@ -352,7 +400,12 @@ function App() {
           variant='contained'
           color='primary'
           onClick={handleSubmit}
-          disabled={!course || classReviews.length === 0 || !selectedDate}
+          disabled={
+            !course ||
+            weekNumber < 1 ||
+            classReviews.length === 0 ||
+            !selectedDate
+          }
         >
           שלח
         </Button>

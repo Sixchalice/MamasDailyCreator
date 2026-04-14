@@ -45,9 +45,12 @@ class MisuvCreator():
                                              config.MISUV_SUBJECT_NAME, "#ffeb3b"),
                 "create_subject",
             )
-        module_id = self.hive_api.get_module_id(subject_id, config.MISUV_MODULE_NAME)
+        week = self.daily_submission.weekNumber
+        module_name = config.MISUV_WEEK_MODULE_LABEL_TEMPLATE.format(week)
+        module_order = str(week)
+        module_id = self.hive_api.get_module_id(subject_id, module_name)
         if not module_id:
-            response = self.hive_api.create_module(subject_id, config.MISUV_MODULE_NAME, "01", False)
+            response = self.hive_api.create_module(subject_id, module_name, module_order, False)
             module_id = _require_json_id(response, "create_module")
         module_exercises = self.hive_api.get_all_exercises_im_module(module_id)
         module_order = 1
@@ -67,10 +70,10 @@ class MisuvCreator():
         self.create_questions(exercise_id)
 
         # Queue integration disabled — only create exercise + fields; re-enable in hive.py + here if needed.
-        # queue_id = self.hive_api.get_queue_id(config.MISUV_MODULE_NAME, module_id)
+        # queue_id = self.hive_api.get_queue_id(module_name, module_id)
         # if not queue_id:
         #     queue_id = _require_json_id(
-        #         self.hive_api.create_new_queue(config.MISUV_MODULE_NAME, module_id),
+        #         self.hive_api.create_new_queue(module_name, module_id),
         #         "create_new_queue",
         #     )
         # self.hive_api.add_exercise_to_queue(exercise_id, queue_id)
