@@ -9,10 +9,10 @@ REVIEW_TYPE_TO_QUESTIONS = {
 }
 
 HIVES_CONFIG = {
-    "gefen-hive": {
-        "username": "s_hagar",
-        "password": "Aa123456",
-        "url": "https://10.0.10.23"
+    "noam-hive": {
+        "username": "admin",
+        "password": "admin",
+        "url": "https://ec2-44-199-203-15.compute-1.amazonaws.com"
     }
 }
 

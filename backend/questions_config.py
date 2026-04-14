@@ -1,17 +1,9 @@
-EXERCISE_QUESTIONS = ["איך הרגשת?",
-                      "ציון ככלי",
-                      "כמה מועיל זה היה"]
+EXERCISE_QUESTIONS = ["ציון כללי"]
 
-PERSONAL_LEARN_QUESTIONS = ["איך הרגשת?",
-                      "ציון ככלי",
-                      "כמה מועיל זה היה"]
+PERSONAL_LEARN_QUESTIONS = ["ציון כללי"]
 
-LECTURE_QUESTIONS = ["איך היה המרצה?",
-                     "כמה מעניין היה?",
-                     "כמה מובן היה?"]
+LECTURE_QUESTIONS = ["איך היה המרצה?"]
 
-PHYSICAL_TRAINING_QUESTIONS = ["איך הרגשת?",
-                               "ציון כללי",
-                               "כמה מועיל זה היה"]
+PHYSICAL_TRAINING_QUESTIONS = ["ציון כללי"]
 
 
