@@ -1,3 +1,5 @@
+import os
+
 import requests
 
 import urllib3
@@ -6,6 +8,21 @@ from urllib3.exceptions import InsecureRequestWarning
 urllib3.disable_warnings(InsecureRequestWarning)
 
 STUDENT_NAME = "Student (id) - Hanich{id}"
+
+
+def hive_fields_debug_enabled() -> bool:
+    """True if DEBUG_HIVE_FIELDS or DEBUG_HIVE is set — use for exercise field POST/GET tracing."""
+    def on(name: str) -> bool:
+        return os.environ.get(name, "").lower() in ("1", "true", "yes")
+
+    return on("DEBUG_HIVE_FIELDS") or on("DEBUG_HIVE")
+
+
+def hive_fields_log(msg: str, **kwargs) -> None:
+    if not hive_fields_debug_enabled():
+        return
+    extra = " | ".join(f"{k}={v!r}" for k, v in kwargs.items())
+    print(f"[Hive FIELDS] {msg}" + (f" | {extra}" if extra else ""))
 
 
 def _unwrap_list(data):
@@ -121,6 +138,35 @@ class HiveAPI:
                                  headers=self.headers)
         return response
 
+    def read_field_group_ids_from_exercise(self, exercise_id):
+        """
+        Return field-group primary keys from an existing exercise field (e.g. auto "Comment"), if any.
+        If all existing fields use `groups: []`, returns None and create_field uses [] (matches PROD UI).
+        """
+        response = self.session.get(
+            self.hive_host + "/api/core/course/exercises/{}/fields/".format(exercise_id),
+            headers=self.headers,
+        )
+        if not response.ok:
+            hive_fields_log(
+                "read_field_group_ids_from_exercise failed",
+                exercise_id=exercise_id,
+                status=response.status_code,
+            )
+            return None
+        for field in _unwrap_list(response.json()):
+            raw = field.get("groups")
+            if not raw:
+                continue
+            if isinstance(raw[0], dict):
+                ids = [int(x["id"]) for x in raw if x.get("id") is not None]
+            else:
+                ids = [int(x) for x in raw]
+            if ids:
+                hive_fields_log("read_field_group_ids_from_exercise", exercise_id=exercise_id, groups=ids)
+                return ids
+        return None
+
     def create_field(self, exercise_id, name, metadata=None, has_value=True,
                      required=False, segel_only=True, type="text", for_response_type=None,
                      lower_limit=None, upper_limit=None, order=999, description="",
@@ -134,7 +180,10 @@ class HiveAPI:
         if choices is None:
             choices = []
         if groups is None:
-            groups = [1]
+            groups = getattr(self, "_misuv_resolved_field_groups", None)
+        if groups is None:
+            # PROD UI sends `groups: []`; pk 1 often does not exist. Empty list is valid (see field POST capture).
+            groups = []
         if hanich_responses is None and staff_responses is None:
             if segel_only:
                 hanich_responses, staff_responses = False, True
@@ -162,11 +211,37 @@ class HiveAPI:
             "choices": choices,
             "groups": groups,
         }
-        return self.session.post(
-            f"{self.hive_host}/api/core/course/exercises/{exercise_id}/fields/",
-            json=body,
-            headers=self.headers,
+        url = f"{self.hive_host}/api/core/course/exercises/{exercise_id}/fields/"
+        hive_fields_log(
+            "create_field request",
+            exercise_id=exercise_id,
+            name_preview=name[:120] if isinstance(name, str) else name,
+            type=type,
+            has_value=has_value,
+            required=required,
+            segel_only=segel_only,
+            order=order,
+            lower_limit=lower_limit,
+            upper_limit=upper_limit,
+            hanich_responses=hanich_responses,
+            staff_responses=staff_responses,
+            groups=groups,
         )
+        response = self.session.post(url, json=body, headers=self.headers)
+        snippet = response.text[:3000] if response.text else ""
+        hive_fields_log(
+            "create_field response",
+            exercise_id=exercise_id,
+            status=response.status_code,
+            content_length=len(response.content or b""),
+        )
+        if hive_fields_debug_enabled():
+            try:
+                parsed = response.json()
+            except Exception:
+                parsed = snippet
+            hive_fields_log("create_field response_body", exercise_id=exercise_id, body=parsed)
+        return response
 
     def get_help_responses(self, help_id):
         response = self.session.get(self.hive_host + f"/api/core/help/{help_id}/responses/", headers=self.headers)
@@ -316,21 +391,48 @@ class HiveAPI:
         return _unwrap_list(response.json())
 
     def delete_field(self, exercise_id, field_id):
-        if field_id in self.get_all_fields_of_exercise(exercise_id):
+        present_before = field_id in self.get_all_fields_of_exercise(exercise_id)
+        hive_fields_log("delete_field", exercise_id=exercise_id, field_id=field_id, present_before=present_before)
+        if present_before:
             response = self.session.delete(
                 self.hive_host + "/api/core/course/exercises/{}/fields/{}".format(exercise_id, field_id),
                 headers=self.headers)
-        if field_id in self.get_all_fields_of_exercise(exercise_id):
+            hive_fields_log("delete_field response", exercise_id=exercise_id, field_id=field_id,
+                            status=response.status_code)
+        still_there = field_id in self.get_all_fields_of_exercise(exercise_id)
+        if still_there:
             print(f"field {field_id} of excercise {exercise_id} could be deleted")
+            hive_fields_log("delete_field still_present", exercise_id=exercise_id, field_id=field_id)
             return False
         return True
 
     def get_all_fields_of_exercise(self, exercise_id):
         response = self.session.get(self.hive_host + "/api/core/course/exercises/{}/fields/".format(exercise_id),
                                     headers=self.headers)
+        if not response.ok:
+            hive_fields_log(
+                "get_all_fields_of_exercise http_error",
+                exercise_id=exercise_id,
+                status=response.status_code,
+                body_preview=(response.text or "")[:2000],
+            )
+            return []
         try:
-            return [field["id"] for field in _unwrap_list(response.json())]
-        except IndexError:
+            raw = _unwrap_list(response.json())
+            ids = [field["id"] for field in raw]
+            hive_fields_log(
+                "get_all_fields_of_exercise",
+                exercise_id=exercise_id,
+                status=response.status_code,
+                count=len(ids),
+                field_ids=ids,
+            )
+            if hive_fields_debug_enabled() and len(raw) <= 30:
+                names_types = [(f.get("name"), f.get("type")) for f in raw]
+                hive_fields_log("get_all_fields_of_exercise names", exercise_id=exercise_id, fields=names_types)
+            return ids
+        except (IndexError, KeyError, TypeError) as exc:
+            hive_fields_log("get_all_fields_of_exercise parse_error", exercise_id=exercise_id, error=repr(exc))
             print(f"exercise {exercise_id} does not exist")
             return []
 

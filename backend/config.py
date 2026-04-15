@@ -10,14 +10,16 @@ REVIEW_TYPE_TO_QUESTIONS = {
 
 HIVES_CONFIG = {
     "noam-hive": {
-        "username": "admin",
-        "password": "admin",
-        "url": "https://ec2-44-199-203-15.compute-1.amazonaws.com"
+        "username": "CommanderNoam",
+        "password": "HasaDiga6^",
+        "url": "https://zarkorhive.israelcentral.cloudapp.azure.com"
     }
 }
 
-MISUV_SUBJECT_SYMBOL = "M"
-MISUV_SUBJECT_NAME = "מישוב"
+MISUV_SUBJECT_SYMBOL = "מ''י"
+MISUV_SUBJECT_NAME = "משוב יומי"
+# Optional override for field `groups` if not inferred; default is [] (PROD UI). Example: [42]
+FIELD_GROUP_IDS_FALLBACK = None
 # Week-based modules: one module per week. Hive `order` = week index (1..WEEK_MODULE_COUNT).
 WEEK_MODULE_COUNT = 60
 # Display name for each module in Hive (week number is {0}).

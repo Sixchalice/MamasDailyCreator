@@ -3,7 +3,7 @@ import os
 import config
 from api_types import ClassReview, DailySubmission
 from config import REVIEW_TYPE_TO_QUESTIONS
-from hive import HiveAPI
+from hive import HiveAPI, hive_fields_log
 
 
 def _hive_debug_print(what: str, response):
@@ -82,25 +82,55 @@ class MisuvCreator():
         return f"course/{program_id}/{subject_id}/{module_id}/{exercise_id}"
 
     def create_questions(self, exercise_id):
-        self.delete_existing_fields(exercise_id)
+        # Field `groups`: use ids from an existing field if present; else `[]` (matches PROD UI; avoid hardcoded [1]).
+        inferred = self.hive_api.read_field_group_ids_from_exercise(exercise_id)
+        fallback = getattr(config, "FIELD_GROUP_IDS_FALLBACK", None)
+        if inferred is not None:
+            resolved = inferred
+            groups_source = "inferred_from_exercise"
+        elif fallback is not None:
+            resolved = fallback
+            groups_source = "config_FIELD_GROUP_IDS_FALLBACK"
+        else:
+            resolved = []
+            groups_source = "default_empty_list"
+        self.hive_api._misuv_resolved_field_groups = resolved
+        try:
+            hive_fields_log(
+                "create_questions start",
+                exercise_id=exercise_id,
+                class_review_count=len(self.daily_submission.classReviews),
+                has_daily_question=bool(self.daily_submission.dailyQuestion),
+                field_groups=resolved,
+                groups_source=groups_source,
+            )
+            self.delete_existing_fields(exercise_id)
 
-        self.add_separator_field(exercise_id)
-        for event in self.daily_submission.classReviews:
-            self.add_questions_for_event(event, exercise_id)
-
-        if self.daily_submission.dailyQuestion:
-            self.hive_api.create_field(exercise_id, "השאלה היומית", has_value=False, segel_only=False,
-                                       required=False)
-            self.hive_api.create_field(exercise_id, f"{self.daily_submission.dailyQuestion}", type="text",
-                                       segel_only=False, required=True)
             self.add_separator_field(exercise_id)
+            for i, event in enumerate(self.daily_submission.classReviews):
+                hive_fields_log("create_questions class_review", exercise_id=exercise_id, index=i,
+                                review_type=event.type)
+                self.add_questions_for_event(event, exercise_id)
 
-        self.hive_api.create_field(exercise_id, f"הערות כלליות לגבי היום", has_value=False, segel_only=False,
-                                   required=False)
-        self.hive_api.create_field(exercise_id, "הערות כלליות", type="text", segel_only=False, required=False)
+            if self.daily_submission.dailyQuestion:
+                self.hive_api.create_field(exercise_id, "השאלה היומית", has_value=False, segel_only=False,
+                                           required=False)
+                self.hive_api.create_field(exercise_id, f"{self.daily_submission.dailyQuestion}", type="text",
+                                           segel_only=False, required=True)
+                self.add_separator_field(exercise_id)
+
+            self.hive_api.create_field(exercise_id, f"הערות כלליות לגבי היום", has_value=False, segel_only=False,
+                                       required=False)
+            self.hive_api.create_field(exercise_id, "הערות כלליות", type="text", segel_only=False, required=False)
+
+            final_ids = self.hive_api.get_all_fields_of_exercise(exercise_id)
+            hive_fields_log("create_questions done", exercise_id=exercise_id, final_field_count=len(final_ids))
+        finally:
+            self.hive_api.__dict__.pop("_misuv_resolved_field_groups", None)
 
     def delete_existing_fields(self, exercise_id):
         fields = self.hive_api.get_all_fields_of_exercise(exercise_id)
+        hive_fields_log("delete_existing_fields", exercise_id=exercise_id, count=len(fields))
         for field_id in fields:
             self.hive_api.delete_field(exercise_id, field_id)
 
