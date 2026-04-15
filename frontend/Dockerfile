@@ -1,7 +1,8 @@
 # Step 1: Build the application
-FROM node:14 AS builder
+# lockfileVersion 3 needs npm 7+ (Node 14 ships npm 6 and breaks npm ci).
+FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json .npmrc ./
 RUN npm ci
 
 COPY . .
