@@ -52,6 +52,7 @@ async def submit_daily(daily_data: DailySubmission):
     print(f"Date: {daily_data.selectedDate}")
     print(f"Class Reviews: {daily_data.classReviews}")
     print(f"Daily Question: {daily_data.dailyQuestion}")
+    print(f"Include share question: {daily_data.includeShareQuestion}")
 
     if daily_data.weekNumber < 1 or daily_data.weekNumber > config.WEEK_MODULE_COUNT:
         raise HTTPException(

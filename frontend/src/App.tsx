@@ -53,6 +53,8 @@ function App() {
   const [dailyQuestion, setDailyQuestion] = useState<string>('');
   const [includeDailyQuestion, setIncludeDailyQuestion] =
     useState<boolean>(false);
+  const [includeShareQuestion, setIncludeShareQuestion] =
+    useState<boolean>(false);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [editingReview, setEditingReview] = useState<ClassReview>({
     type: '',
@@ -176,25 +178,30 @@ function App() {
     setIncludeDailyQuestion(e.target.checked);
   };
 
+  const handleIncludeShareQuestionChange = (
+    e: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setIncludeShareQuestion(e.target.checked);
+  };
+
   const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSelectedDate(e.target.value);
   };
 
   const handleSubmit = () => {
     setSubmitResponse("מחכה לתשובה...")
-    const dataToSend = {
+    const dataToSend: Record<string, unknown> = {
       course,
       classReviews,
       weekNumber,
+      includeShareQuestion,
     };
 
     if (includeDailyQuestion && dailyQuestion) {
-      //@ts-ignore
       dataToSend['dailyQuestion'] = dailyQuestion;
     }
 
     if (selectedDate) {
-      //@ts-ignore
       dataToSend['selectedDate'] = selectedDate;
     }
 
@@ -394,6 +401,18 @@ function App() {
               />
             </div>
           )}
+        </div>
+        <div className='daily-question'>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={includeShareQuestion}
+                onChange={handleIncludeShareQuestionChange}
+                color='primary'
+              />
+            }
+            label='הוסף שאלה לסיום: האם יש משהו שחשוב לך לשתף״'
+          />
         </div>
         <Button
           className='submit-button'

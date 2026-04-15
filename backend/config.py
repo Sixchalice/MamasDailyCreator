@@ -10,9 +10,9 @@ REVIEW_TYPE_TO_QUESTIONS = {
 
 HIVES_CONFIG = {
     "noam-hive": {
-        "username": "CommanderNoam",
-        "password": "HasaDiga6^",
-        "url": "https://zarkorhive.israelcentral.cloudapp.azure.com"
+        "username": "admin",
+        "password": "admin",
+        "url": "https://ec2-44-199-203-15.compute-1.amazonaws.com"
     }
 }
 
@@ -24,3 +24,5 @@ FIELD_GROUP_IDS_FALLBACK = None
 WEEK_MODULE_COUNT = 60
 # Display name for each module in Hive (week number is {0}).
 MISUV_WEEK_MODULE_LABEL_TEMPLATE = "שבוע {}"
+# Optional final text field when includeShareQuestion is true (must match UI copy).
+SHARE_QUESTION_TEXT = "משהו שחשוב לי לשתף"

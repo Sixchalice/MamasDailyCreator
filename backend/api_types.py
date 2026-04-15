@@ -14,6 +14,7 @@ class DailySubmission(BaseModel):
     classReviews: List[ClassReview]
     weekNumber: int
     dailyQuestion: Optional[str] = None
+    includeShareQuestion: bool = False
 
 
 class Course(BaseModel):
