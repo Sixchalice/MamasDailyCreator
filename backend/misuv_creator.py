@@ -113,7 +113,7 @@ class MisuvCreator():
             self.delete_existing_fields(exercise_id)
 
             self._field_order_seq = 0
-            self.add_separator_field(exercise_id)
+            # self.add_separator_field(exercise_id)
             for i, event in enumerate(self.daily_submission.classReviews):
                 hive_fields_log("create_questions class_review", exercise_id=exercise_id, index=i,
                                 review_type=event.type)
@@ -124,14 +124,14 @@ class MisuvCreator():
                                            required=False, order=self._next_field_order())
                 self.hive_api.create_field(exercise_id, f"{self.daily_submission.dailyQuestion}", type="text",
                                            segel_only=False, required=True, order=self._next_field_order())
-                self.add_separator_field(exercise_id)
+                # self.add_separator_field(exercise_id)
 
             # self.hive_api.create_field(exercise_id, f"הערות כלליות לגבי היום", has_value=False, segel_only=False,
             #                            required=False)
             # self.hive_api.create_field(exercise_id, "הערות כלליות", type="text", segel_only=False, required=False)
 
             if self.daily_submission.includeShareQuestion:
-                self.add_separator_field(exercise_id)
+                # Do not add_separator here: last class review (and daily block if any) already ends with one.
                 self.hive_api.create_field(
                     exercise_id,
                     config.SHARE_QUESTION_TEXT,
@@ -159,9 +159,9 @@ class MisuvCreator():
         for question in questions:
             self.hive_api.create_field(exercise_id, question, type="number", lower_limit=1, upper_limit=10,
                                        segel_only=False, required=True, order=self._next_field_order())
-        self.hive_api.create_field(exercise_id, "נמק את תשובתייך", type="text", segel_only=False, required=True,
+        self.hive_api.create_field(exercise_id, "פירוט", type="text", segel_only=False, required=True,
                                    order=self._next_field_order())
-        self.add_separator_field(exercise_id)
+        # self.add_separator_field(exercise_id)
 
     def add_separator_field(self, exercise_id):
         self.hive_api.create_field(exercise_id,

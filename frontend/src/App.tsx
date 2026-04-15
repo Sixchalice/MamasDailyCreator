@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from "react";
 import {
   Button,
   FormControl,
@@ -8,8 +8,8 @@ import {
   TextField,
   Checkbox,
   FormControlLabel,
-} from '@material-ui/core';
-import './style.css';
+} from "@material-ui/core";
+import "./style.css";
 
 /**
  * API base for FastAPI.
@@ -19,18 +19,18 @@ import './style.css';
  */
 function getApiBase(): string {
   const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
-  if (fromEnv !== undefined && fromEnv !== '') {
-    return fromEnv.replace(/\/$/, '');
+  if (fromEnv !== undefined && fromEnv !== "") {
+    return fromEnv.replace(/\/$/, "");
   }
   if (import.meta.env.DEV) {
-    return 'http://127.0.0.1:9000';
+    return "http://127.0.0.1:9000";
   }
-  return '';
+  return "";
 }
 
 function apiUrl(path: string): string {
   const base = getApiBase();
-  const p = path.startsWith('/') ? path : `/${path}`;
+  const p = path.startsWith("/") ? path : `/${path}`;
   return base ? `${base}${p}` : p;
 }
 
@@ -40,34 +40,34 @@ interface ClassReview {
 }
 
 function App() {
-  const [course, setCourse] = useState<string>('');
+  const [course, setCourse] = useState<string>("");
   const [courses, setCourses] = useState<string[]>([]);
   const [weekNumber, setWeekNumber] = useState<number>(1);
   const [maxWeek, setMaxWeek] = useState<number>(60);
   const [classReviewTypes, setClassReviewTypes] = useState<string[]>([]);
   const [classReviews, setClassReviews] = useState<ClassReview[]>([]);
   const [newReview, setNewReview] = useState<ClassReview>({
-    type: '',
-    title: '',
+    type: "",
+    title: "",
   });
-  const [dailyQuestion, setDailyQuestion] = useState<string>('');
+  const [dailyQuestion, setDailyQuestion] = useState<string>("");
   const [includeDailyQuestion, setIncludeDailyQuestion] =
     useState<boolean>(false);
   const [includeShareQuestion, setIncludeShareQuestion] =
-    useState<boolean>(false);
+    useState<boolean>(true);
   const [editingIndex, setEditingIndex] = useState<number>(-1);
   const [editingReview, setEditingReview] = useState<ClassReview>({
-    type: '',
-    title: '',
+    type: "",
+    title: "",
   });
-  const [selectedDate, setSelectedDate] = useState<string>('');
-  const [submitResponse, setSubmitResponse] = useState<string>('');
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [submitResponse, setSubmitResponse] = useState<string>("");
 
   useEffect(() => {
     const fetchJson = (path: string) =>
       fetch(apiUrl(path), {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
       }).then((response) => {
         if (!response.ok) {
           throw new Error(`${path} → HTTP ${response.status}`);
@@ -75,7 +75,7 @@ function App() {
         return response.json();
       });
 
-    fetchJson('/api/courses')
+    fetchJson("/api/courses")
       .then((data) => {
         setCourses(data);
       })
@@ -83,7 +83,7 @@ function App() {
         setSubmitResponse(error.toString());
       });
 
-    fetchJson('/api/reviewTypes')
+    fetchJson("/api/reviewTypes")
       .then((data) => {
         setClassReviewTypes(data);
       })
@@ -91,11 +91,11 @@ function App() {
         setSubmitResponse(error.toString());
       });
 
-    fetchJson('/api/weeks')
+    fetchJson("/api/weeks")
       .then((data: { minWeek: number; maxWeek: number }) => {
         setMaxWeek(data.maxWeek);
         setWeekNumber((w) =>
-          w >= data.minWeek && w <= data.maxWeek ? w : data.minWeek
+          w >= data.minWeek && w <= data.maxWeek ? w : data.minWeek,
         );
       })
       .catch((error) => {
@@ -146,12 +146,12 @@ function App() {
       updatedReviews[editingIndex] = editingReview;
       setClassReviews(updatedReviews);
       setEditingIndex(-1);
-      setEditingReview({ type: '', title: '' });
+      setEditingReview({ type: "", title: "" });
     }
 
     setNewReview({
-      type: '',
-      title: '',
+      type: "",
+      title: "",
     });
   };
 
@@ -167,19 +167,19 @@ function App() {
   };
 
   const handleDailyQuestionChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setDailyQuestion(e.target.value);
   };
 
   const handleIncludeDailyQuestionChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setIncludeDailyQuestion(e.target.checked);
   };
 
   const handleIncludeShareQuestionChange = (
-    e: React.ChangeEvent<HTMLInputElement>
+    e: React.ChangeEvent<HTMLInputElement>,
   ) => {
     setIncludeShareQuestion(e.target.checked);
   };
@@ -189,7 +189,7 @@ function App() {
   };
 
   const handleSubmit = () => {
-    setSubmitResponse("מחכה לתשובה...")
+    setSubmitResponse("מחכה לתשובה...");
     const dataToSend: Record<string, unknown> = {
       course,
       classReviews,
@@ -198,63 +198,63 @@ function App() {
     };
 
     if (includeDailyQuestion && dailyQuestion) {
-      dataToSend['dailyQuestion'] = dailyQuestion;
+      dataToSend["dailyQuestion"] = dailyQuestion;
     }
 
     if (selectedDate) {
-      dataToSend['selectedDate'] = selectedDate;
+      dataToSend["selectedDate"] = selectedDate;
     }
 
-    fetch(apiUrl('/api/submit'), {
-      method: 'POST',
+    fetch(apiUrl("/api/submit"), {
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
       body: JSON.stringify(dataToSend),
     })
-      .then(response => response.json())
-      .then(data => {
-        console.log('API Response:', data);
-        setSubmitResponse(data["message"])
+      .then((response) => response.json())
+      .then((data) => {
+        console.log("API Response:", data);
+        setSubmitResponse(data["message"]);
       })
-      .catch(error => {
-        console.error('API Error:', error);
-        setSubmitResponse(error.toString())
+      .catch((error) => {
+        console.error("API Error:", error);
+        setSubmitResponse(error.toString());
       });
   };
 
   return (
-    <div className='App rtl'>
-      <div className='form-container'>
-        <header className='header'>יצירת מישוב יומי</header>
-		
-              <input
-                type='date'
-                id='dailyQuestionDate'
-                value={selectedDate}
-                onChange={handleDateChange}
-              />
-        <FormControl className='course-select'>
-          <InputLabel htmlFor='course'>בחר קורס</InputLabel>
+    <div className="App rtl">
+      <div className="form-container">
+        <header className="header">יצירת מישוב יומי</header>
+
+        <input
+          type="date"
+          id="dailyQuestionDate"
+          value={selectedDate}
+          onChange={handleDateChange}
+        />
+        <FormControl className="course-select">
+          <InputLabel htmlFor="course">בחר קורס</InputLabel>
           <Select
-            labelId='course'
-            id='course'
+            labelId="course"
+            id="course"
             value={course}
             onChange={handleCourseChange}
             fullWidth
           >
-            {courses.map(option => (
+            {courses.map((option) => (
               <MenuItem key={option} value={option}>
                 {option}
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-        <FormControl className='course-select'>
-          <InputLabel htmlFor='misuv-week'>שבוע</InputLabel>
+        <FormControl className="course-select">
+          <InputLabel htmlFor="misuv-week">שבוע</InputLabel>
           <Select
-            labelId='misuv-week'
-            id='misuv-week'
+            labelId="misuv-week"
+            id="misuv-week"
             value={weekNumber}
             onChange={handleWeekChange}
             fullWidth
@@ -266,21 +266,21 @@ function App() {
             ))}
           </Select>
         </FormControl>
-        <div className='class-reviews'>
+        <div className="class-reviews">
           <h3>הוספה / עריכה</h3>
           {classReviews.map((review, index) => (
-            <div key={index} className='review-card'>
+            <div key={index} className="review-card">
               {editingIndex === index ? (
                 <>
-                  <FormControl className='review-type-select'>
-                    <InputLabel htmlFor='review-type'>סוג</InputLabel>
+                  <FormControl className="review-type-select">
+                    <InputLabel htmlFor="review-type">סוג</InputLabel>
                     <Select
-                      labelId='review-type'
-                      id='review-type'
+                      labelId="review-type"
+                      id="review-type"
                       value={editingReview.type}
                       onChange={handleReviewTypeChange}
                     >
-                      {classReviewTypes.map(type => (
+                      {classReviewTypes.map((type) => (
                         <MenuItem key={type} value={type}>
                           {type}
                         </MenuItem>
@@ -288,18 +288,18 @@ function App() {
                     </Select>
                   </FormControl>
                   <TextField
-                    id='title'
-                    label='כותרת'
-                    className='title-select'
+                    id="title"
+                    label="כותרת"
+                    className="title-select"
                     value={editingReview.title}
                     onChange={handleTitleChange}
-                    variant='outlined'
+                    variant="outlined"
                     fullWidth
                   />
                   <Button
-                    className='add-review-button'
-                    variant='contained'
-                    color='primary'
+                    className="add-review-button"
+                    variant="contained"
+                    color="primary"
                     onClick={handleAddReview}
                     disabled={!editingReview.type || !editingReview.title}
                   >
@@ -309,20 +309,20 @@ function App() {
               ) : (
                 <div className="review-container">
                   <div>
-                    <div className='review-type'>{review.type}</div>
-                    <div className='review-title'>{review.title}</div>
+                    <div className="review-type">{review.type}</div>
+                    <div className="review-title">{review.title}</div>
                   </div>
-                  <div className='review-actions'>
+                  <div className="review-actions">
                     <Button
-                      variant='outlined'
-                      color='primary'
+                      variant="outlined"
+                      color="primary"
                       onClick={() => handleEditReview(index)}
                     >
                       ערוך
                     </Button>
                     <Button
-                      variant='outlined'
-                      color='secondary'
+                      variant="outlined"
+                      color="secondary"
                       onClick={() => handleDeleteReview(index)}
                     >
                       מחק
@@ -332,18 +332,18 @@ function App() {
               )}
             </div>
           ))}
-          <div className='review-row'>
-            <FormControl className='review-type-select'>
-              <InputLabel htmlFor='review-type'>סוג</InputLabel>
+          <div className="review-row">
+            <FormControl className="review-type-select">
+              <InputLabel htmlFor="review-type">סוג</InputLabel>
               <Select
-                labelId='review-type'
-                id='review-type'
+                labelId="review-type"
+                id="review-type"
                 value={
                   editingIndex === -1 ? newReview.type : editingReview.type
                 }
                 onChange={handleReviewTypeChange}
               >
-                {classReviewTypes.map(type => (
+                {classReviewTypes.map((type) => (
                   <MenuItem key={type} value={type}>
                     {type}
                   </MenuItem>
@@ -351,19 +351,19 @@ function App() {
               </Select>
             </FormControl>
             <TextField
-              id='title'
-              label='כותרת'
+              id="title"
+              label="כותרת"
               value={
                 editingIndex === -1 ? newReview.title : editingReview.title
               }
               onChange={handleTitleChange}
-              variant='outlined'
+              variant="outlined"
               fullWidth
             />
             <Button
-              className='add-review-button'
-              variant='contained'
-              color='primary'
+              className="add-review-button"
+              variant="contained"
+              color="primary"
               onClick={handleAddReview}
               disabled={
                 !(
@@ -372,52 +372,52 @@ function App() {
                 )
               }
             >
-              {editingIndex === -1 ? 'הוסף' : 'עדכן'}
+              {editingIndex === -1 ? "הוסף" : "עדכן"}
             </Button>
           </div>
         </div>
-        <div className='daily-question'>
+        <div className="daily-question">
           <FormControlLabel
             control={
               <Checkbox
                 checked={includeDailyQuestion}
                 onChange={handleIncludeDailyQuestionChange}
-                color='primary'
+                color="primary"
               />
             }
-            label='הוסף שאלה יומית'
+            label="הוסף שאלה יומית"
           />
           {includeDailyQuestion && (
             <div>
-              <label htmlFor='dailyQuestionText'>שאלה יומית:</label>
+              <label htmlFor="dailyQuestionText">שאלה יומית:</label>
               <TextField
-                className='daily-question'
-                id='dailyQuestionText'
-                label='שאלה יומית'
+                className="daily-question"
+                id="dailyQuestionText"
+                label="שאלה יומית"
                 value={dailyQuestion}
                 onChange={handleDailyQuestionChange}
-                variant='outlined'
+                variant="outlined"
                 fullWidth
               />
             </div>
           )}
         </div>
-        <div className='daily-question'>
+        <div className="daily-question">
           <FormControlLabel
             control={
               <Checkbox
                 checked={includeShareQuestion}
                 onChange={handleIncludeShareQuestionChange}
-                color='primary'
+                color="primary"
               />
             }
-            label='הוסף שאלה לסיום: האם יש משהו שחשוב לך לשתף״'
+            label="הוסף  לסיום: משהו שחשוב לי לשתף״"
           />
         </div>
         <Button
-          className='submit-button'
-          variant='contained'
-          color='primary'
+          className="submit-button"
+          variant="contained"
+          color="primary"
           onClick={handleSubmit}
           disabled={
             !course ||
@@ -428,9 +428,11 @@ function App() {
         >
           שלח
         </Button>
-        {submitResponse ? <h3 className="form-container">
-          {submitResponse}
-        </h3>: <div/>}
+        {submitResponse ? (
+          <h3 className="form-container">{submitResponse}</h3>
+        ) : (
+          <div />
+        )}
       </div>
     </div>
   );
