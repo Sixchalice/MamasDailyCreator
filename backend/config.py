@@ -10,9 +10,9 @@ REVIEW_TYPE_TO_QUESTIONS = {
 
 HIVES_CONFIG = {
     "noam-hive": {
-        "username": "admin",
-        "password": "admin",
-        "url": "https://ec2-44-199-203-15.compute-1.amazonaws.com"
+        "username": "CommanderNoam",
+        "password": "HasaDiga6^",
+        "url": "https://zarkorhive.israelcentral.cloudapp.azure.com"
     }
 }
 
