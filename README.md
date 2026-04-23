@@ -2,9 +2,9 @@
 
 This repo creates a website for generating daily reviews in Hive.
 
-It does not use the schedule, Instead it provides a GUI for entering the review items.
+# To Run:
 
-![Example Website](docs/example.png)
+set the username and password in `config.py` in the backend
 
 ## Frontend
 
@@ -15,5 +15,5 @@ npm start
 ## Backend
 
 ```bash
-uvicorn api:app --reload --port 80 
+uvicorn api:app --reload --port 9000
 ```
