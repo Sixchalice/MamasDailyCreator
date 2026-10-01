@@ -4,10 +4,15 @@ services:
       context: frontend
     container_name: "daily_review"
     image: dailyreview/frontend
+    depends_on:
+      - backend
+    environment:
+      VITE_CACHE_DIR: /tmp/.vite
+      API_PROXY_TARGET: http://backend:9000
     expose:
-      - "80"
+      - "5173"
     ports:
-      - "80:80"
+      - "5173:5173"
     networks:
       - inside
 

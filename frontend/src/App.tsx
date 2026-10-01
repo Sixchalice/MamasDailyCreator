@@ -13,17 +13,14 @@ import "./style.css";
 
 /**
  * API base for FastAPI.
- * - Set `VITE_API_BASE_URL` in `frontend/.env` (e.g. `http://127.0.0.1:9000`) to override.
- * - In dev, defaults to `http://127.0.0.1:9000` so `/api/*` hits the backend even when Vite’s proxy does not.
- * - In production builds, omit the env var to use same-origin `/api` (e.g. nginx → backend).
+ * - Set `VITE_API_BASE_URL` in `frontend/.env` to call the API host directly (bypasses Vite proxy).
+ * - In dev, defaults to same-origin `/api` so Vite’s dev proxy can reach the backend (local or Docker).
+ * - In production builds, omit the env var to use same-origin `/api` behind your static host / gateway.
  */
 function getApiBase(): string {
   const fromEnv = import.meta.env.VITE_API_BASE_URL as string | undefined;
   if (fromEnv !== undefined && fromEnv !== "") {
     return fromEnv.replace(/\/$/, "");
-  }
-  if (import.meta.env.DEV) {
-    return "http://127.0.0.1:9000";
   }
   return "";
 }
