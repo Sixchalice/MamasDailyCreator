@@ -1,4 +1,5 @@
 import os
+import time
 
 import requests
 
@@ -34,14 +35,43 @@ def _unwrap_list(data):
     return []
 
 
+class _ReloginSession(requests.Session):
+    """Retries a request once with a fresh token when the Hive answers 401.
+
+    The access token expires (Hive's HIVE_ACCESS_TOKEN_LIFETIME_MINUTES), and the
+    login fails if the Hive is down when the backend starts. Either way every call
+    used to get 401, which list endpoints turned into empty lists (e.g. no courses)
+    until the backend was restarted.
+    """
+
+    def __init__(self, hive_api):
+        super().__init__()
+        self._hive_api = hive_api
+
+    def request(self, method, url, *args, **kwargs):
+        response = super().request(method, url, *args, **kwargs)
+        if response.status_code == 401 and "/api/core/token/" not in url and "/api/auth/" not in url:
+            self._hive_api.refresh_login()
+            kwargs["headers"] = {**(kwargs.get("headers") or {}), **self._hive_api.headers}
+            response = super().request(method, url, *args, **kwargs)
+        return response
+
+
 class HiveAPI:
     def __init__(self, username, password, hive_host):
         self.hive_host = hive_host
-        self.session = requests.session()
+        self._username = username
+        self._password = password
+        self.session = _ReloginSession(self)
         # Hive may use a self-signed cert; verify all requests consistently.
         self.session.verify = False
-        self.token = self.login(username, password)
-        self.headers = {"Authorization": f"Bearer {self.token}"}
+        self.headers = {}
+        self.refresh_login()
+
+    def refresh_login(self):
+        """Log in again and update the Authorization header used by all calls."""
+        self.token = self.login(self._username, self._password)
+        self.headers["Authorization"] = f"Bearer {self.token}"
 
     def login(self, username, password):
         """
@@ -50,11 +80,17 @@ class HiveAPI:
         @param password: The password to log in with
         """
         cred = {"username": username, "password": password}
-        response = self.session.get(self.hive_host + "/api/auth/session")
-        if response.status_code == 200:
-            response = self.session.post(self.hive_host + "/api/core/token/", json=cred)
+        try:
+            response = self.session.get(self.hive_host + "/api/auth/session")
+            if response.status_code == 200:
+                response = self.session.post(self.hive_host + "/api/core/token/", json=cred)
+        except requests.RequestException as e:
+            # Hive unreachable (e.g. still starting): the next call will try again.
+            print(f"[Hive] login to {self.hive_host} failed: {e}")
+            return False
         if response.status_code == 200:
             return response.json()["access"]
+        print(f"[Hive] login to {self.hive_host} failed: HTTP {response.status_code}")
         return False
 
     def add_user(self, username, password, number=1, gender="Female", program=1, clearance=1, checkers_brief="",
@@ -85,6 +121,33 @@ class HiveAPI:
         }
         return self.session.post(self.hive_host + "/api/core/management/users/", json=body,
                                  headers=self.headers)
+
+    def wait_until_synced(self, kind, object_id, timeout=120):
+        """
+        Wait until the Hive has finished loading a new course object from disk.
+        A new subject/module/exercise starts with sync_status "Creating" while a Hive
+        background task creates its folder and loads its children from disk. Adding a
+        child (e.g. a module to a new subject) before that finishes makes the task create
+        the child a second time; the task then fails and the object stays "Creating",
+        which the Hive UI shows as endless loading.
+        @param kind: "subjects", "modules" or "exercises"
+        @param object_id: id of the object
+        @param timeout: seconds to wait before giving up
+        """
+        deadline = time.monotonic() + timeout
+        while True:
+            response = self.session.get(f"{self.hive_host}/api/core/course/{kind}/{object_id}/",
+                                        headers=self.headers)
+            response.raise_for_status()
+            data = response.json()
+            status = data.get("sync_status")
+            if status in (None, "Normal"):  # None: a Hive version without sync status
+                return
+            if status == "Error":
+                raise RuntimeError(f"Hive failed to load {kind} {object_id}: {data.get('sync_message')}")
+            if time.monotonic() > deadline:
+                raise RuntimeError(f"Hive still loading {kind} {object_id} after {timeout}s (sync_status={status})")
+            time.sleep(0.5)
 
     def create_module(self, subject, module, order, rolling):
         """
@@ -511,15 +574,37 @@ class HiveAPI:
         return response
 
     def retrieve_exercise_answers_by_id(self, exercise_id):
-        response = self.session.get(self.hive_host + "/api/core/assignments/?exercise_id={}".format(exercise_id),
-                                    headers=self.headers)
-        assignment_ids = [assignment["id"] for assignment in _unwrap_list(response.json())]
+        assignment_ids = [assignment["id"] for assignment in self.get_exercise_assignments(exercise_id)]
         return self.get_responses_by_ids(assignment_ids)
 
     def get_responses_by_ids(self, assingment_ids):
         return [self.session.get(self.hive_host + "/api/core/assignments/{}/responses".format(id),
                                  headers=self.headers)
                 for id in assingment_ids]
+
+    def get_exercise_assignments(self, exercise_id):
+        # The Hive ignores `exercise_id=` and returns every assignment; `exercise__id=` filters.
+        response = self.session.get(self.hive_host + "/api/core/assignments/", headers=self.headers,
+                                    params={"exercise__id": exercise_id})
+        response.raise_for_status()
+        return _unwrap_list(response.json())
+
+    def get_assignment_responses(self, assignment_id):
+        response = self.session.get(self.hive_host + f"/api/core/assignments/{assignment_id}/responses",
+                                    headers=self.headers)
+        response.raise_for_status()
+        return _unwrap_list(response.json())
+
+    def get_modules_of_subject(self, subject_id):
+        response = self.session.get(self.hive_host + "/api/core/course/modules/", headers=self.headers,
+                                    params={"parent_subject__id": subject_id})
+        response.raise_for_status()
+        return _unwrap_list(response.json())
+
+    def get_users(self):
+        response = self.session.get(self.hive_host + "/api/core/management/users/", headers=self.headers)
+        response.raise_for_status()
+        return _unwrap_list(response.json())
 
     def retrieve_exercise_fields_by_id(self, exercise_id):
         response = self.session.get(self.hive_host + "/api/core/course/exercises/{}/fields/".format(str(exercise_id)),

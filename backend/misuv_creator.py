@@ -50,6 +50,8 @@ class MisuvCreator():
                                              config.MISUV_SUBJECT_NAME, "#ffeb3b"),
                 "create_subject",
             )
+        # Let the Hive finish loading each new object before adding children to it.
+        self.hive_api.wait_until_synced("subjects", subject_id)
         week = self.daily_submission.weekNumber
         module_name = config.MISUV_WEEK_MODULE_LABEL_TEMPLATE.format(week)
         module_order = str(week)
@@ -57,6 +59,7 @@ class MisuvCreator():
         if not module_id:
             response = self.hive_api.create_module(subject_id, module_name, module_order, False)
             module_id = _require_json_id(response, "create_module")
+        self.hive_api.wait_until_synced("modules", module_id)
         module_exercises = self.hive_api.get_all_exercises_im_module(module_id)
         module_order = 1
         if len(module_exercises) > 0:
@@ -72,6 +75,7 @@ class MisuvCreator():
             ),
             "create_exercise",
         )
+        self.hive_api.wait_until_synced("exercises", exercise_id)
         self.create_questions(exercise_id)
 
         # Queue integration disabled — only create exercise + fields; re-enable in hive.py + here if needed.
