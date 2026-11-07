@@ -10,7 +10,7 @@ REVIEW_TYPE_TO_QUESTIONS = {
 
 HIVES_CONFIG = {
     "noam-hive": {
-        "username": "CommanderXXXXX",
+        "username": "DailyCreator",
         "password": "XXXXXXX",
         "url": "https://mamahive.israelcentral.cloudapp.azure.com"
     }
