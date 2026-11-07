@@ -12,7 +12,7 @@ HIVES_CONFIG = {
     "noam-hive": {
         "username": "CommanderXXXXX",
         "password": "XXXXXXX",
-        "url": "https://zarkorhive.israelcentral.cloudapp.azure.com"
+        "url": "https://mamahive.israelcentral.cloudapp.azure.com"
     }
 }
 
